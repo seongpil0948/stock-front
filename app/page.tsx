@@ -1,3 +1,4 @@
+import { QuadraticRect } from "@/components/QuadraticRect";
 import SelectCompany from "@/components/Services";
 import { title, subtitle } from "@/components/primitives";
 
@@ -12,6 +13,7 @@ export default function Home() {
           Select the service What you want
         </h2>
       </div>
+      <QuadraticRect />
       <div className="w-full text-center justify-center">
         <SelectCompany />
       </div>
