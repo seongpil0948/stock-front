@@ -1,12 +1,20 @@
 "use client";
 
 import { LayoutCamera, motion } from "framer-motion-3d";
-import { MotionConfig } from "framer-motion";
-import { Suspense, useMemo } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { MotionConfig, useAnimationControls } from "framer-motion";
+import {
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Canvas, MeshProps, useFrame, useThree } from "@react-three/fiber";
 import useMeasure from "react-use-measure";
 import { degToRad } from "three/src/math/MathUtils.js";
 import { OrbitControls } from "@react-three/drei";
+import { BoxGeometry, Matrix4 } from "three";
 
 export const transition = {
   type: "spring",
@@ -23,51 +31,112 @@ export const transition = {
 //   return useSpring(useTransform(value, transformer), springOptions);
 // }
 
-export function QuadraticRect() {
+export function QuadraticRectScene() {
   // const lightRotateX = useSmoothTransform(mouseY, spring, mouseToLightRotation);
   // const lightRotateY = useSmoothTransform(mouseX, spring, mouseToLightRotation);
   return (
     <MotionConfig transition={transition}>
       <Suspense fallback={null}>
-        <QuadraticRectScene />
+        <QCanvas />
       </Suspense>
     </MotionConfig>
   );
 }
-function QuadraticRectScene() {
-  const RectQuad = useMemo(() => {
-    const n = 10;
-    const gapX = 2;
-    const gapY = 2;
-    const rects: any[] = [];
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        rects.push(
+
+const MAX_H = 15;
+function QuadraticRect(props: { companies: string[]; n: number }) {
+  const { n, companies } = props;
+
+  const meshRefs = useRef<MeshProps[][]>([]);
+  const MeshQuad = useMemo(() => {
+    const meshes = [];
+    const gapX = 7.5;
+    const gapY = 1;
+    for (let x = 0; x < companies.length; x++) {
+      meshRefs.current[x] = [];
+      for (let y = 0; y < n; y++) {
+        meshes.push(
           <motion.mesh
-            key={i + j}
-            position-x={i * gapX}
-            position-y={j * gapY}
-            scale={[1, 1, 1]}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
+            key={`${x}-${y}`}
+            position-x={x * gapX}
+            position-z={y * gapY}
+            ref={(ref) => {
+              if (ref) {
+                meshRefs.current[x][y] = ref;
+              }
+            }}
           >
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color="hotpink" />
+            <boxGeometry args={[5, 1, 1, 1, 1, 1]} />
+            {/* <meshStandardMaterial color="#736fbd" /> */}
+            <meshStandardMaterial color="#2c2e2c" />
           </motion.mesh>
         );
       }
     }
-    return rects;
-  }, []);
+    return meshes;
+  }, [n, companies]);
+
+  const getHGradualIncrease = (elapsedTime: number, x: number, y: number) =>
+    Math.abs(Math.sin(elapsedTime) + x * 1 + ((y * 1 * MAX_H) % MAX_H));
+
+  const getHRandom = (elapsedTime: number, x: number, y: number) =>
+    Math.abs(Math.sin(elapsedTime + Math.random() * 0.01) * MAX_H);
+
+  function linearRamp(
+    elapsedTime: number,
+    min: number,
+    max: number,
+    isCos = false
+  ) {
+    // Calculate the output value using a sine wave
+    const value =
+      min +
+      (max - min) *
+        0.5 *
+        (1 + (isCos ? Math.cos(elapsedTime) : Math.sin(elapsedTime)));
+
+    return value;
+  }
+
+  useFrame((state) => {
+    const time = state.clock.getElapsedTime();
+    meshRefs.current.forEach((row, x) => {
+      row.forEach((mesh, y) => {
+        const g = mesh.geometry as BoxGeometry;
+        const p = g.parameters;
+        // const height = Math.sin(time + x * 0.1 + y * 0.1) * MAX_H;
+        const isCos = (x + y) % 2 !== 0;
+        const height = linearRamp(time + x * 0.1 + y * 0.1, 0, MAX_H, isCos);
+        mesh.geometry = new BoxGeometry(p.width, height, p.depth);
+      });
+    });
+  });
+
+  return <>{MeshQuad}</>;
+}
+
+function QCanvas() {
+  // useFrame(({ gl, scene, camera }) => {
+  //   gl.render(scene, camera);
+  // }, 1);
 
   return (
-    <Canvas dpr={[1, 2]} shadows>
+    <Canvas
+      dpr={[1, 2]}
+      shadows
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+      }}
+    >
       <perspectiveCamera position={[0, 0, 5]} />
       <OrbitControls enableDamping />
       <Lights />
-      <group position={[0, -0.9, -3]}>
-        <mesh
+      <group position={[-8, 0, -5]}>
+        {/* <mesh
           receiveShadow
           castShadow
           rotation-x={-Math.PI / 2}
@@ -76,9 +145,9 @@ function QuadraticRectScene() {
         >
           <boxGeometry />
           <meshStandardMaterial color="hotpink" />
-        </mesh>
-        {...RectQuad}
-        <mesh
+        </mesh> */}
+        <QuadraticRect companies={["a", "b", "c", "d"]} n={2} />
+        {/* <mesh
           receiveShadow
           castShadow
           rotation-x={-Math.PI / 2}
@@ -107,7 +176,7 @@ function QuadraticRectScene() {
         >
           <boxGeometry />
           <meshStandardMaterial color="white" />
-        </mesh>
+        </mesh> */}
       </group>
     </Canvas>
   );
