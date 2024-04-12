@@ -1,8 +1,9 @@
 import { QuadraticRectScene } from "@/components/QuadraticRect";
-import SelectCompany from "@/components/Services";
+import SelectCompany from "@/components/service/SelectCompany";
 import { AnimateBlink } from "@/components/animate/typo";
 import { title, subtitle } from "@/components/primitives";
 import { Image } from "@nextui-org/image";
+import { StepInfer } from "@/components/service/StepInfer";
 export default function Home() {
   return (
     <>
@@ -18,21 +19,7 @@ export default function Home() {
             alt="docs right background"
           />
         </div>
-        <section className="flex flex-col items-center justify-center gap-4 h-screen">
-          <div className="inline-block max-w-lg text-center justify-center">
-            <h1 className={title()}>Stock </h1>
-            <h1 className={title({ color: "violet" })}> service &nbsp;</h1>
-            <br />
-            <AnimateBlink>
-              <h2 className={subtitle({ class: "mt-4" })}>
-                Select the service What you want
-              </h2>
-            </AnimateBlink>
-          </div>
-          <div className="w-full text-center justify-center">
-            <SelectCompany />
-          </div>
-        </section>
+        <StepInfer />
       </div>
     </>
   );
