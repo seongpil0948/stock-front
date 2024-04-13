@@ -2,22 +2,13 @@
 import { useMemo, useState } from "react";
 import SelectCompany from "./SelectCompany";
 import { MotionConfig, motion } from "framer-motion";
-import { AnimateBlink } from "../animate/typo";
-import {
-  DateValue,
-  getLocalTimeZone,
-  parseDate,
-} from "@internationalized/date";
-import { DateInput } from "../date-input";
-import { useDateFormatter } from "@react-aria/i18n";
+import { ResultView } from "./ResultView";
+import { SelectDate } from "./SelectDate";
 
-type Step = "selectCompany" | "selectOption";
+type Step = "selectCompany" | "selectOption" | "showResult";
 export function StepInfer() {
   const [selectedTicker, setSelectedTicker] = useState<string>();
-  const step = useMemo<Step>(() => {
-    if (!selectedTicker) return "selectCompany";
-    return "selectOption";
-  }, [selectedTicker]);
+  const [selectedDate, setSelectedDate] = useState<string>();
 
   const stepVariants = {
     visible: { opacity: 1 },
@@ -28,6 +19,11 @@ export function StepInfer() {
   const onSelectCompany = (data: { value: string }) => {
     console.log(`data in next selectCompany`, data);
     setSelectedTicker(data.value);
+  };
+
+  const onSelectDate = (data: { value: string }) => {
+    console.log(`data in next onSelectDate`, data);
+    setSelectedDate(data.value);
   };
 
   const tickers = [
@@ -41,8 +37,12 @@ export function StepInfer() {
     },
   ];
 
-  const [value, setValue] = useState<DateValue>(parseDate("2024-04-04"));
-  let formatter = useDateFormatter({ dateStyle: "full" });
+  const step = useMemo<Step>(() => {
+    if (!selectedTicker) return "selectCompany";
+    else if (selectedDate) return "showResult";
+    return "selectOption";
+  }, [selectedTicker, selectedDate]);
+
   return (
     <section className="flex flex-col w-full text-center items-center justify-center gap-4 h-screen">
       <MotionConfig
@@ -60,11 +60,6 @@ export function StepInfer() {
             exit="exit"
           >
             <SelectCompany tickers={tickers} onNext={onSelectCompany} />
-            <DateInput value={value} onChange={setValue} label="date input" />
-            <p className="text-default-500 text-sm">
-              Selected date:{" "}
-              {value ? formatter.format(value.toDate(getLocalTimeZone())) : "—"}
-            </p>
           </motion.div>
         )}
         {step === "selectOption" && (
@@ -74,11 +69,28 @@ export function StepInfer() {
             animate={step === "selectOption" ? "visible" : "hidden"}
             exit="exit"
           >
-            <>
-              <AnimateBlink>
-                <h1>Please select options</h1>
-              </AnimateBlink>
-            </>
+            {selectedTicker && (
+              <SelectDate
+                selectedTicker={selectedTicker}
+                onNext={onSelectDate}
+              />
+            )}
+          </motion.div>
+        )}
+        {step === "showResult" && (
+          <motion.div
+            variants={stepVariants}
+            initial="hidden"
+            animate={step === "showResult" ? "visible" : "hidden"}
+            exit="exit"
+          >
+            {selectedTicker && selectedDate && (
+              <ResultView
+                content={`AI inference results`}
+                date={selectedDate}
+                ticker={selectedTicker}
+              />
+            )}
           </motion.div>
         )}
       </MotionConfig>
