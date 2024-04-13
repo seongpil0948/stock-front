@@ -3,6 +3,13 @@ import { useMemo, useState } from "react";
 import SelectCompany from "./SelectCompany";
 import { MotionConfig, motion } from "framer-motion";
 import { AnimateBlink } from "../animate/typo";
+import {
+  DateValue,
+  getLocalTimeZone,
+  parseDate,
+} from "@internationalized/date";
+import { DateInput } from "../date-input";
+import { useDateFormatter } from "@react-aria/i18n";
 
 type Step = "selectCompany" | "selectOption";
 export function StepInfer() {
@@ -33,6 +40,9 @@ export function StepInfer() {
       description: "마이크로소프트 주식",
     },
   ];
+
+  const [value, setValue] = useState<DateValue>(parseDate("2024-04-04"));
+  let formatter = useDateFormatter({ dateStyle: "full" });
   return (
     <section className="flex flex-col w-full text-center items-center justify-center gap-4 h-screen">
       <MotionConfig
@@ -50,6 +60,11 @@ export function StepInfer() {
             exit="exit"
           >
             <SelectCompany tickers={tickers} onNext={onSelectCompany} />
+            <DateInput value={value} onChange={setValue} label="date input" />
+            <p className="text-default-500 text-sm">
+              Selected date:{" "}
+              {value ? formatter.format(value.toDate(getLocalTimeZone())) : "—"}
+            </p>
           </motion.div>
         )}
         {step === "selectOption" && (
